@@ -1,8 +1,8 @@
 import { Context } from 'koa'
 import { createMockContext } from '@shopify/jest-koa-mocks'
 
-import ItemsController from '~/controllers/items.controller'
-import { itemList } from '~/mocks/items.mock'
+import ItemsController from '../../controllers/items.controller'
+import { itemList } from '../../mocks/items.mock'
 
 describe('Items controller', () => {
   test('GET - it returns correct values in body', async () => {
