@@ -50,7 +50,7 @@ export class FileTracker {
   }
 
   // init routine
-  readFolderReccursive(
+  async readFolderReccursive(
     directory: string,
     parent: FileEntry | null,
     callback?: (err?: any) => void
@@ -73,64 +73,66 @@ export class FileTracker {
       parent = dirEntry
     }
 
-    fs.readdir(directory, async (err, files) => {
-      let shasum: string
-      let entry: FileEntry
-      if (err) {
-        console.error(err)
-      }
+    let files: string[]
+    try {
+      files = await fs.promises.readdir(directory)
+    } catch (err) {
+      console.error(err)
+      files = []
+    }
+    // fs.readdir(directory, async (err, files) => {
+    let shasum: string
+    let entry: FileEntry
 
-      files?.forEach(async (file) => {
-        const fullpath = path.join(directory, file)
-        //console.log('loop file', fullpath)
-        //if (Object.hasOwnProperty.call(this.jsonStorage.data, file)) {
-        if (Object.hasOwnProperty.call(this.data, fullpath)) {
-          // already known
-          console.log('already known', fullpath)
-          const entry2 = this.data[fullpath]
-          entry = entry2
-          if (entry2.shasum) {
-            shasum = entry2.shasum
-          }
+    for (const file of files) {
+      const fullpath = path.join(directory, file)
+      console.log('loop file', fullpath)
+      //if (Object.hasOwnProperty.call(this.jsonStorage.data, file)) {
+      if (Object.hasOwnProperty.call(this.data, fullpath)) {
+        // already known
+        console.log('already known', fullpath)
+        const entry2 = this.data[fullpath]
+        entry = entry2
+        if (entry2.shasum) {
+          shasum = entry2.shasum
+        }
+      } else {
+        // NEW
+        const fstatRet = await fsStat(fullpath)
+        if (fstatRet.err || fstatRet.stats == null) {
+          console.error(
+            'Failed to fetch stats for file',
+            fullpath,
+            fstatRet.err
+          )
         } else {
-          // NEW
-          const fstatRet = await fsStat(fullpath)
-          if (fstatRet.err || fstatRet.stats == null) {
-            console.error(
-              'Failed to fetch stats for file',
-              fullpath,
-              fstatRet.err
-            )
-          } else {
-            const fstat = fstatRet.stats
-            entry = {
-              filename: fullpath,
-              mtime: fstat.mtime,
-              ctime: fstat.ctime,
-              parent: parent
-            }
+          const fstat = fstatRet.stats
+          entry = {
+            filename: fullpath,
+            mtime: fstat.mtime,
+            ctime: fstat.ctime,
+            parent: parent
+          }
 
-            if (fstat.isDirectory()) {
-              entry.isDir = true
-              this.data[fullpath] = entry // for dir use filename as checksum
-              await this.readFolderReccursive(fullpath, entry)
-              return
-            } else {
-              this.total++
-              this.simultaneous++
-              this.workpad.push(entry)
-              //console.log('going to getMediaChecksumA', this.simultaneous)
-              //const ret = await getMediaChecksumA(fullpath);
-              // console.log('getMediaChecksumA', this.simultaneous)
-              this.simultaneous--
-              // shasum = ret.checksum; // FIXME check err
-            }
+          if (fstat.isDirectory()) {
+            entry.isDir = true
+            this.data[fullpath] = entry // for dir use filename as checksum
+            await this.readFolderReccursive(fullpath, entry)
+          } else {
+            this.total++
+            this.simultaneous++
+            this.workpad.push(entry)
+            //console.log('going to getMediaChecksumA', this.simultaneous)
+            //const ret = await getMediaChecksumA(fullpath);
+            // console.log('getMediaChecksumA', this.simultaneous)
+            this.simultaneous--
+            // shasum = ret.checksum; // FIXME check err
           }
         }
-        console.log('fullpath', fullpath, shasum)
-        this.data[fullpath] = entry
-      }) // end file forEach
-    }) // end await fs.readdir
+      }
+      console.log('fullpath', fullpath, shasum)
+      this.data[fullpath] = entry
+    } // end file forEach
 
     if (topLevel) {
       // we are root and finished
@@ -141,14 +143,15 @@ export class FileTracker {
 
   // init routine
   async hashFiles(callback?: (err?: any) => void) {
-    this.workpad.forEach(async (entry) => {
+    for (const entry of this.workpad) {
       console.log('going to hash', entry.filename)
       const ret = await getMediaChecksumA(entry.filename)
       if (!ret.err) {
         entry.shasum = ret.checksum
         console.log(' hashed', entry.filename, ret.checksum)
+        // append to jsonStorage
       }
-    })
+    }
     callback?.()
   }
 

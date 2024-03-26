@@ -15,21 +15,24 @@ const fileTracker = new FileTracker(watchFoldersContent)
 
 let watcher
 // all this initialization goes on in the background and could take minutes and even hours and should not be awaited
-watchFolders.readStorageFile((data: any) => {
-  const todoCount = Object.keys(data).length
+watchFolders.readStorageFile(async (data: any) => {
+  const keys = Object.keys(data)
+  const todoCount = keys.length
   let doneCount = 0
-  Object.keys(data).forEach(async (dir) => {
-    fileTracker.readFolderReccursive(dir, null, async (err) => {
+  for (const dir of keys) {
+    await fileTracker.readFolderReccursive(dir, null, async (err) => {
       console.log('finished scraping all files', fileTracker.total)
       doneCount++
       if (doneCount >= todoCount) {
+        console.log('okt hashing')
         await fileTracker.hashFiles(() => {
           console.log('done hashing')
         })
       }
     })
+    console.log('end one run of readFolder', doneCount)
     // await fileTracker.inspectFile(dir);
-  })
+  }
   watcher = new Watcher(Object.keys(data))
 
   watcher.on('all', (event, targetPath, targetPathNext) => {
