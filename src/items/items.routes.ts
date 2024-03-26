@@ -1,12 +1,9 @@
 import Router from 'koa-router'
 import { ITEMS_PATH } from '../constants/routes.constants'
-import ItemsController from '../controllers/items.controller'
-import {
-  validateItem,
-  validateUpdateItem
-} from '../validators/items.validators'
+import ItemsController from './items.controller'
+import { validateItem, validateUpdateItem } from './items.validators'
 
-const createItemsRoutes = (router: Router) => {
+const setupItemsRoutes = (router: Router) => {
   router.get(ITEMS_PATH, ItemsController.get)
   router.get(`${ITEMS_PATH}/:id`, ItemsController.getItem)
   router.post(ITEMS_PATH, validateItem, ItemsController.create)
@@ -15,4 +12,4 @@ const createItemsRoutes = (router: Router) => {
   console.log('create item route')
 }
 
-export default createItemsRoutes
+export default setupItemsRoutes

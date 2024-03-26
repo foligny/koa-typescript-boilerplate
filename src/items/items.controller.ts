@@ -1,10 +1,10 @@
 import { Context } from 'koa'
 import HttpStatus from 'http-status'
-import { itemList } from '../mocks/items.mock'
+import { itemList } from './items.mock'
+import { JsonStorage } from '../utils/storage'
 
 const ItemsController = {
   get: (ctx: Context) => {
-    console.log('get list')
     ctx.body = itemList
     ctx.status = HttpStatus.OK
   },

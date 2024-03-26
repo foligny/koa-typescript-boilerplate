@@ -1,12 +1,12 @@
 import Joi from 'joi'
 
-import { createJoiMiddleware } from '../validators'
+import { createJoiMiddleware } from '../middleware/joi'
 import { MAX_ITEM_QUANTITY } from '../constants/items.constants'
 import {
   MAX_NUMBER_ERROR,
   NAME_REQUIRED_ERROR,
   QUANTITY_REQUIRED_ERROR
-} from '../errors/items.errors'
+} from './items.errors'
 
 const itemSchema = Joi.object({
   name: Joi.string().required().error(new Error(NAME_REQUIRED_ERROR)),

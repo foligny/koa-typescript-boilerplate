@@ -1,4 +1,4 @@
-import { Item } from '../types/items.type'
+import { Item } from './items.models'
 
 export const itemList: Item[] = [
   {
